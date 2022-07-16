@@ -23,6 +23,7 @@ from sb3_contrib.common.vec_env import AsyncEval
 # For using HER with GoalEnv
 from stable_baselines3 import HerReplayBuffer  # noqa: F401
 from stable_baselines3.common.base_class import BaseAlgorithm
+from stable_baselines3.common.buffers import ReplayBuffer
 from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback, EvalCallback
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
@@ -92,6 +93,7 @@ class ExperimentManager:
         n_eval_envs: int = 1,
         no_optim_plots: bool = False,
         device: Union[th.device, str] = "auto",
+        replay_buffer_class: Optional[ReplayBuffer] = None,
     ):
         super().__init__()
         self.algo = algo
@@ -161,6 +163,9 @@ class ExperimentManager:
         )
         self.params_path = f"{self.save_path}/{self.env_id}"
 
+        # Add to make replay buffers a plug and play component
+        self.replay_buffer_class = replay_buffer_class
+
     def setup_experiment(self) -> Optional[Tuple[BaseAlgorithm, Dict[str, Any]]]:
         """
         Read hyperparameters, pre-process them (create schedules, wrappers, callbacks, action noise objects)
@@ -192,6 +197,7 @@ class ExperimentManager:
                 seed=self.seed,
                 verbose=self.verbose,
                 device=self.device,
+                replay_buffer_class=self.replay_buffer_class,
                 **self._hyperparams,
             )
 
@@ -599,6 +605,7 @@ class ExperimentManager:
             tensorboard_log=self.tensorboard_log,
             verbose=self.verbose,
             device=self.device,
+            replay_buffer_class=self.replay_buffer_class,
             **hyperparams,
         )
 
@@ -669,6 +676,7 @@ class ExperimentManager:
             seed=None,
             verbose=trial_verbosity,
             device=self.device,
+            replay_buffer_class=self.replay_buffer_class,
             **kwargs,
         )
 

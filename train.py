@@ -14,16 +14,28 @@ from stable_baselines3.common.utils import set_random_seed
 # Register custom envs
 import utils.import_envs  # noqa: F401 pytype: disable=import-error
 from utils.exp_manager import ExperimentManager
-from utils.utils import ALGOS, StoreDict
+from utils.utils import ALGOS, RBUFS, StoreDict
 
 seaborn.set()
 
 if __name__ == "__main__":  # noqa: C901
     parser = argparse.ArgumentParser()
-    parser.add_argument("--algo", help="RL Algorithm", default="ppo", type=str, required=False, choices=list(ALGOS.keys()))
+    parser.add_argument(
+        "--algo", help="RL Algorithm", default="ppo", type=str, required=False, choices=list(ALGOS.keys())
+    )
+    parser.add_argument(
+        "--replay-buffer",
+        help="Replay buffer algorithm used",
+        default="uer",
+        type=str,
+        required=False,
+        choices=list(RBUFS.keys()),
+    )
     parser.add_argument("--env", type=str, default="CartPole-v1", help="environment ID")
     parser.add_argument("-tb", "--tensorboard-log", help="Tensorboard log dir", default="", type=str)
-    parser.add_argument("-i", "--trained-agent", help="Path to a pretrained agent to continue training", default="", type=str)
+    parser.add_argument(
+        "-i", "--trained-agent", help="Path to a pretrained agent to continue training", default="", type=str
+    )
     parser.add_argument(
         "--truncate-last-trajectory",
         help="When using HER with online sampling the last trajectory "
@@ -32,7 +44,9 @@ if __name__ == "__main__":  # noqa: C901
         type=bool,
     )
     parser.add_argument("-n", "--n-timesteps", help="Overwrite the number of timesteps", default=-1, type=int)
-    parser.add_argument("--num-threads", help="Number of threads for PyTorch (-1 to use default)", default=-1, type=int)
+    parser.add_argument(
+        "--num-threads", help="Number of threads for PyTorch (-1 to use default)", default=-1, type=int
+    )
     parser.add_argument("--log-interval", help="Override log interval (default: -1, no change)", default=-1, type=int)
     parser.add_argument(
         "--eval-freq",
@@ -49,7 +63,9 @@ if __name__ == "__main__":  # noqa: C901
     )
     parser.add_argument("--eval-episodes", help="Number of episodes to use for evaluation", default=5, type=int)
     parser.add_argument("--n-eval-envs", help="Number of environments for evaluation", default=1, type=int)
-    parser.add_argument("--save-freq", help="Save the model every n steps (if negative, no checkpoint)", default=-1, type=int)
+    parser.add_argument(
+        "--save-freq", help="Save the model every n steps (if negative, no checkpoint)", default=-1, type=int
+    )
     parser.add_argument(
         "--save-replay-buffer", help="Save the replay buffer too (when applicable)", action="store_true", default=False
     )
@@ -72,12 +88,18 @@ if __name__ == "__main__":  # noqa: C901
         default=None,
     )
     parser.add_argument(
-        "-optimize", "--optimize-hyperparameters", action="store_true", default=False, help="Run hyperparameters search"
+        "-optimize",
+        "--optimize-hyperparameters",
+        action="store_true",
+        default=False,
+        help="Run hyperparameters search",
     )
     parser.add_argument(
         "--no-optim-plots", action="store_true", default=False, help="Disable hyperparameter optimization plots"
     )
-    parser.add_argument("--n-jobs", help="Number of parallel jobs when optimizing hyperparameters", type=int, default=1)
+    parser.add_argument(
+        "--n-jobs", help="Number of parallel jobs when optimizing hyperparameters", type=int, default=1
+    )
     parser.add_argument(
         "--sampler",
         help="Sampler to use when optimizing hyperparameters",
@@ -92,7 +114,9 @@ if __name__ == "__main__":  # noqa: C901
         default="median",
         choices=["halving", "median", "none"],
     )
-    parser.add_argument("--n-startup-trials", help="Number of trials before using optuna sampler", type=int, default=10)
+    parser.add_argument(
+        "--n-startup-trials", help="Number of trials before using optuna sampler", type=int, default=10
+    )
     parser.add_argument(
         "--n-evaluations",
         help="Training policies are evaluated every n-timesteps // n-evaluations steps when doing hyperparameter optimization."
@@ -113,7 +137,11 @@ if __name__ == "__main__":  # noqa: C901
         help="Additional external Gym environment package modules to import (e.g. gym_minigrid)",
     )
     parser.add_argument(
-        "--env-kwargs", type=str, nargs="+", action=StoreDict, help="Optional keyword argument to pass to the env constructor"
+        "--env-kwargs",
+        type=str,
+        nargs="+",
+        action=StoreDict,
+        help="Optional keyword argument to pass to the env constructor",
     )
     parser.add_argument(
         "-params",
@@ -123,7 +151,9 @@ if __name__ == "__main__":  # noqa: C901
         action=StoreDict,
         help="Overwrite hyperparameter (e.g. learning_rate:0.01 train_freq:10)",
     )
-    parser.add_argument("-uuid", "--uuid", action="store_true", default=False, help="Ensure that the run has a unique ID")
+    parser.add_argument(
+        "-uuid", "--uuid", action="store_true", default=False, help="Ensure that the run has a unique ID"
+    )
     parser.add_argument(
         "--track",
         action="store_true",
@@ -225,6 +255,7 @@ if __name__ == "__main__":  # noqa: C901
         n_eval_envs=args.n_eval_envs,
         no_optim_plots=args.no_optim_plots,
         device=args.device,
+        replay_buffer_cls=args.replay_buffer,
     )
 
     # Prepare experiment and launch hyperparameter optimization if needed
