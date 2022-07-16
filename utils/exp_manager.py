@@ -47,7 +47,7 @@ from torch import nn as nn  # noqa: F401
 import utils.import_envs  # noqa: F401 pytype: disable=import-error
 from utils.callbacks import SaveVecNormalizeCallback, TrialEvalCallback
 from utils.hyperparams_opt import HYPERPARAMS_SAMPLER
-from utils.utils import ALGOS, get_callback_list, get_latest_run_id, get_wrapper_class, linear_schedule
+from utils.utils import ALGOS, RBUFS, get_callback_list, get_latest_run_id, get_wrapper_class, linear_schedule
 
 
 class ExperimentManager:
@@ -93,7 +93,7 @@ class ExperimentManager:
         n_eval_envs: int = 1,
         no_optim_plots: bool = False,
         device: Union[th.device, str] = "auto",
-        replay_buffer_class: Optional[ReplayBuffer] = None,
+        replay_buffer_name: str = "uer",
     ):
         super().__init__()
         self.algo = algo
@@ -164,7 +164,7 @@ class ExperimentManager:
         self.params_path = f"{self.save_path}/{self.env_id}"
 
         # Add to make replay buffers a plug and play component
-        self.replay_buffer_class = replay_buffer_class
+        self.replay_buffer_class = RBUFS[replay_buffer_name]
 
     def setup_experiment(self) -> Optional[Tuple[BaseAlgorithm, Dict[str, Any]]]:
         """

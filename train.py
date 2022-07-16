@@ -255,7 +255,7 @@ if __name__ == "__main__":  # noqa: C901
         n_eval_envs=args.n_eval_envs,
         no_optim_plots=args.no_optim_plots,
         device=args.device,
-        replay_buffer_cls=args.replay_buffer,
+        replay_buffer_name=args.replay_buffer,
     )
 
     # Prepare experiment and launch hyperparameter optimization if needed
