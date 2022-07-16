@@ -93,3 +93,27 @@ class _UniformStateReplayBuffer(ReplayBuffer):
     def _encode_obs_action(self, state: np.ndarray, action: Optional[np.ndarray] = None):
         encoded_state = self.node_encoder(state)
         return encoded_state
+
+
+class UniformStateReplayBuffer(_UniformStateReplayBuffer):
+    def __init__(
+        self,
+        buffer_size: int,
+        observation_space: spaces.Space,
+        action_space: spaces.Space,
+        device: Union[th.device, str] = "cpu",
+        n_envs: int = 1,
+        optimize_memory_usage: bool = False,
+        handle_timeout_termination: bool = True,
+        node_encoder_cls=RandomProjectionEncoder,
+    ):
+        super().__init__(
+            buffer_size,
+            observation_space,
+            action_space,
+            device,
+            n_envs,
+            optimize_memory_usage,
+            handle_timeout_termination,
+            node_encoder_cls,
+        )
