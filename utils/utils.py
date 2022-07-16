@@ -9,9 +9,11 @@ import gym
 import stable_baselines3 as sb3  # noqa: F401
 import torch as th  # noqa: F401
 import yaml
+
 # from huggingface_hub import HfApi
 # from sb3_contrib import ARS, QRDQN, TQC, TRPO, RecurrentPPO
 from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3
+from stable_baselines3.common.buffers import ReplayBuffer
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.sb2_compat.rmsprop_tf_like import RMSpropTFLike  # noqa: F401
@@ -21,12 +23,12 @@ from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecEnv,
 from torch import nn as nn  # noqa: F401 pylint: disable=unused-import
 
 ALGOS = {
-    "a2c": A2C,
-    "ddpg": DDPG,
+    # "a2c": A2C,
+    # "ddpg": DDPG,
     "dqn": DQN,
-    "ppo": PPO,
-    "sac": SAC,
-    "td3": TD3,
+    # "ppo": PPO,
+    # "sac": SAC,
+    # "td3": TD3,
     # SB3 Contrib,
     # "ars": ARS,
     # "qrdqn": QRDQN,
@@ -34,6 +36,8 @@ ALGOS = {
     # "trpo": TRPO,
     # "ppo_lstm": RecurrentPPO,
 }
+
+RBUFS = {"uer": ReplayBuffer}
 
 
 def flatten_dict_observations(env: gym.Env) -> gym.Env:
