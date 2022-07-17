@@ -36,7 +36,7 @@ class _UniformStateReplayBuffer(ReplayBuffer):
         )
         self.state_buffer_positions = defaultdict(list)
         self.add_count = 0
-        self.node_encoder = node_encoder_cls(self.observation_space.shape)
+        self.node_encoder = node_encoder_cls(self.obs_shape)
 
     def add(
         self,
