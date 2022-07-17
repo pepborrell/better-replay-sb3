@@ -1,2 +1,3 @@
+from reject_us_replay_buffer import RejectUniformStateReplayBuffer
 from uniform_state_action_replay_buffer import UniformStateActionReplayBuffer
 from uniform_state_replay_buffer import UniformStateReplayBuffer
