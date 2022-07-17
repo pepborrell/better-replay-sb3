@@ -9,6 +9,7 @@ from stable_baselines3.common.buffers import ReplayBuffer
 from stable_baselines3.common.type_aliases import ReplayBufferSamples
 
 from buffers.utils import RandomProjectionEncoder
+from buffers.utils.sample_reindexer import Reindexer, ReplayBufferTransitions, join_transitions
 
 
 class _RejectUniformStateReplayBuffer(ReplayBuffer):
@@ -47,6 +48,41 @@ class _RejectUniformStateReplayBuffer(ReplayBuffer):
     def _encode_obs_action(self, obs: np.ndarray, action: Optional[np.ndarray] = None) -> np.ndarray:
         return self.node_encoder(obs)
 
+    def _update_min_deleted(self, observation, action) -> None:
+        # Remove the transition from the state counter
+        enc_rem_t = self._encode_obs_action(observation, action)
+        self.state_counter[enc_rem_t] -= 1
+        if self.state_counter[enc_rem_t] == 0:
+            del self.state_counter[enc_rem_t]
+        # Removing a transition from a state with min_count transitions
+        if self.state_counter[enc_rem_t] == self.min_count:
+            self.count_min_count[0] -= 1
+            # If the minimum is 1, the state was deleted and we aren't interested on it.
+            # Otherwise, decrease minimum count
+            if self.min_count > 1:
+                self.min_count -= 1
+                self.count_min_count[1] = self.count_min_count[0]
+                self.count_min_count[0] = 1
+        # Removing transition from state with min_count + 1 transitions
+        elif self.state_counter[enc_rem_t] == self.min_count + 1:
+            self.count_min_count[0] += 1
+            self.count_min_count[1] -= 1
+
+    def _update_min_added(self, encoded_state):
+        # Adding a new transition to one of the states that has exactly min_count transitions
+        if self.state_counter[encoded_state] == self.min_count:
+            self.count_min_count[0] -= 1
+            self.count_min_count[1] += 1
+            if self.count_min_count[0] == 0:
+                self.min_count += 1
+                self.count_min_count[0] = self.count_min_count[1]
+                self.count_min_count[1] = len(
+                    [val for val in self.state_counter.values() if val == self.min_count + 1]
+                )
+        # Adding a new transition to a state that has min_count + 1 transitions
+        elif self.state_counter[encoded_state] == self.min_count + 1:
+            self.count_min_count[1] -= 1
+
     def add(
         self,
         obs: np.ndarray,
@@ -56,45 +92,39 @@ class _RejectUniformStateReplayBuffer(ReplayBuffer):
         done: np.ndarray,
         infos: List[Dict[str, Any]],
     ) -> None:
+        if self.full:
+            removed_obs = self.observations[self.pos]
+            removed_act = self.actions[self.pos]
+            # Update min counts with deleted transition
+            self._update_min_deleted(removed_obs, removed_act)
+
         super().add(obs, next_obs, action, reward, done, infos)
 
         enc_state = self._encode_obs_action(obs, action)
         self.state_counter[enc_state] += 1
+        # Update min count with added transition
+        self._update_min_added(enc_state)
 
-    def get_state_count(self, obs: np.ndarray, action: np.ndarray) -> int:
-        enc_state = self._encode_obs_action(obs, action)
+    def get_state_count(self, transition: ReplayBufferTransitions) -> int:
+        obs, act = transition.observation, transition.action
+        enc_state = self._encode_obs_action(obs, act)
         return self.state_counter[enc_state]
 
-    def _accept_transition(self, obs: th.Tensor, action: th.Tensor) -> bool:
-        n_s = self.get_state_count(obs, action)
-        u = np.random.uniform()
+    def _accept_transition(self, n_s: int) -> bool:
+        u: float = np.random.uniform()
         return u < (self.min_count / n_s)
 
     def sample(self, batch_size: int) -> ReplayBufferSamples:
-        sampled_obs = []
-        sampled_acts = []
-        sampled_next = []
-        sampled_dones = []
-        sampled_rews = []
-        while len(sampled_obs) < batch_size:
-            n_trans = batch_size - len(sampled_obs)
-            obses, acts, next_obses, dones, rews = super().sample(batch_size=n_trans)
-            for i in range(n_trans):
-                if self._accept_transition(obses[i], acts[i]):
-                    sampled_obs.append(obses[i])
-                    sampled_acts.append(acts[i])
-                    sampled_next.append(next_obses[i])
-                    sampled_dones.append(dones[i])
-                    sampled_rews.append(rews[i])
+        sampled = ReplayBufferTransitions()
+        while len(sampled) < batch_size:
+            uer_sample = Reindexer(super().sample(batch_size=batch_size))
+            is_accepted = np.array(
+                map(lambda transition: self._accept_transition(self.get_state_count(transition)), uer_sample)
+            )
+            sampled = join_transitions((sampled, uer_sample[is_accepted]))
 
-        data = (
-            th.stack(sampled_obs, dim=0),
-            th.stack(sampled_acts, dim=0),
-            th.stack(sampled_next, dim=0),
-            th.stack(sampled_dones, dim=0),
-            th.stack(sampled_rews, dim=0),
-        )
         self._update_rejection_coeff()
+        data = Reindexer(sampled)[:batch_size]
         return ReplayBufferSamples(*tuple(map(self.to_torch, data)))
 
 
