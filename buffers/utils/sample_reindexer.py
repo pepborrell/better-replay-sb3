@@ -1,4 +1,3 @@
-from re import S
 from typing import NamedTuple, Sequence, Union
 
 import numpy as np
