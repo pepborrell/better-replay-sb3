@@ -77,7 +77,7 @@ class _UniformStateReplayBuffer(ReplayBuffer):
 
     def _sample_from_state_list(self, state_list) -> int:
         while len(state_list) > 0:
-            ind = np.random.randint(len(state_list), size=1)
+            ind = np.random.randint(len(state_list))
             if self._is_trans_ind_valid(state_list[ind]):
                 return ind
             # Here old transitions are lazily deleted from the USR data structure
