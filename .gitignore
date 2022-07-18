@@ -131,3 +131,4 @@ dmypy.json
 
 # CUSTOM FOR THIS PROJECT
 logs/
+sftp.json
