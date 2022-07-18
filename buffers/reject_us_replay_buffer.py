@@ -7,6 +7,7 @@ import torch as th
 from gym import spaces
 from stable_baselines3.common.buffers import ReplayBuffer
 from stable_baselines3.common.type_aliases import ReplayBufferSamples
+from stable_baselines3.common.vec_env import VecNormalize
 
 from buffers.utils import RandomProjectionEncoder
 from buffers.utils.sample_reindexer import Reindexer, ReplayBufferTransitions, join_transitions
@@ -106,7 +107,7 @@ class _RejectUniformStateReplayBuffer(ReplayBuffer):
         self._update_min_added(enc_state)
 
     def get_state_count(self, transition: ReplayBufferTransitions) -> int:
-        obs, act = transition.observation, transition.action
+        obs, act = transition.observations, transition.actions
         enc_state = self._encode_obs_action(obs, act)
         return self.state_counter[enc_state]
 
@@ -114,17 +115,23 @@ class _RejectUniformStateReplayBuffer(ReplayBuffer):
         u: float = np.random.uniform()
         return u < (self.min_count / n_s)
 
-    def sample(self, batch_size: int) -> ReplayBufferSamples:
-        sampled = ReplayBufferTransitions()
+    def _update_rejection_coeff(self) -> None:
+        pass
+
+    def sample(self, batch_size: int, env: Optional[VecNormalize] = None) -> ReplayBufferSamples:
+        sampled = []
         while len(sampled) < batch_size:
-            uer_sample = Reindexer(super().sample(batch_size=batch_size))
+            uer_sample = Reindexer(super().sample(batch_size=batch_size, env=env))
             is_accepted = np.array(
-                map(lambda transition: self._accept_transition(self.get_state_count(transition)), uer_sample)
+                list(map(lambda transition: self._accept_transition(self.get_state_count(transition)), uer_sample))
             )
-            sampled = join_transitions((sampled, uer_sample[is_accepted]))
+            if sampled:
+                sampled = Reindexer(join_transitions((sampled[:], uer_sample[is_accepted])))
+            else:
+                sampled = Reindexer(join_transitions((uer_sample[is_accepted],)))
 
         self._update_rejection_coeff()
-        data = Reindexer(sampled)[:batch_size]
+        data = sampled[:batch_size]
         return ReplayBufferSamples(*tuple(map(self.to_torch, data)))
 
 
