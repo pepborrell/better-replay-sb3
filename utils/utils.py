@@ -22,6 +22,13 @@ from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecEnv,
 # For custom activation fn
 from torch import nn as nn  # noqa: F401 pylint: disable=unused-import
 
+from buffers import (
+    RejectUniformStateActionReplayBuffer,
+    RejectUniformStateReplayBuffer,
+    UniformStateActionReplayBuffer,
+    UniformStateReplayBuffer,
+)
+
 ALGOS = {
     # "a2c": A2C,
     # "ddpg": DDPG,
@@ -37,7 +44,13 @@ ALGOS = {
     # "ppo_lstm": RecurrentPPO,
 }
 
-RBUFS = {"uer": ReplayBuffer}
+RBUFS = {
+    "uer": ReplayBuffer,
+    "usr": UniformStateReplayBuffer,
+    "usar": UniformStateActionReplayBuffer,
+    "rusr": RejectUniformStateReplayBuffer,
+    "rusar": RejectUniformStateActionReplayBuffer,
+}
 
 
 def flatten_dict_observations(env: gym.Env) -> gym.Env:
