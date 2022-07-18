@@ -12,11 +12,11 @@ class RandomProjectionEncoder(object):
 
 
 def obs_encoder(encoder: RandomProjectionEncoder, obs: np.ndarray) -> tuple:
-    encoded_obs = encoder(obs)
+    encoded_obs = encoder(np.squeeze(obs))
     return tuple(encoded_obs)
 
 
 def obs_action_encoder(encoder: RandomProjectionEncoder, obs: np.ndarray, action: np.ndarray) -> tuple:
-    encoded_obs = encoder(obs)
+    encoded_obs = encoder(np.squeeze(obs))
     encoded_obs_action = (*tuple(encoded_obs), *tuple(action))
     return encoded_obs_action

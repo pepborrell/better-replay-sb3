@@ -25,13 +25,13 @@ def index_rbuf_samples(samples: ReplayBufferSamples, ind: Union[int, np.ndarray]
 
 def join_transitions(transitions: Sequence[ReplayBufferTransitions]) -> ReplayBufferTransitions:
     return ReplayBufferTransitions(
-        observations=np.concatenate([transitions[i].observations.clone() for i in range(len(transitions))], axis=0),
-        actions=np.concatenate([transitions[i].actions.clone() for i in range(len(transitions))], axis=0),
+        observations=np.concatenate([transitions[i].observations.copy() for i in range(len(transitions))], axis=0),
+        actions=np.concatenate([transitions[i].actions.copy() for i in range(len(transitions))], axis=0),
         next_observations=np.concatenate(
-            [transitions[i].next_observations.clone() for i in range(len(transitions))], axis=0
+            [transitions[i].next_observations.copy() for i in range(len(transitions))], axis=0
         ),
-        dones=np.concatenate([transitions[i].dones.clone() for i in range(len(transitions))], axis=0),
-        rewards=np.concatenate([transitions[i].rewards.clone() for i in range(len(transitions))], axis=0),
+        dones=np.concatenate([transitions[i].dones.copy() for i in range(len(transitions))], axis=0),
+        rewards=np.concatenate([transitions[i].rewards.copy() for i in range(len(transitions))], axis=0),
     )
 
 

@@ -119,6 +119,31 @@ class _RejectUniformStateReplayBuffer(ReplayBuffer):
     def _update_rejection_coeff(self) -> None:
         pass
 
+    def _get_samples(self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None) -> ReplayBufferTransitions:
+        """Copied from stable_baselines3.common.buffers.ReplayBuffer.get_samples
+        Copied because we want the output to be np arrays, not torch.
+        We convert to torch later.
+        """
+
+        # Sample randomly the env idx
+        env_indices = np.random.randint(0, high=self.n_envs, size=(len(batch_inds),))
+
+        if self.optimize_memory_usage:
+            next_obs = self._normalize_obs(self.observations[(batch_inds + 1) % self.buffer_size, env_indices, :], env)
+        else:
+            next_obs = self._normalize_obs(self.next_observations[batch_inds, env_indices, :], env)
+
+        data = (
+            self._normalize_obs(self.observations[batch_inds, env_indices, :], env),
+            self.actions[batch_inds, env_indices, :],
+            next_obs,
+            # Only use dones that are not due to timeouts
+            # deactivated by default (timeouts is initialized as an array of False)
+            (self.dones[batch_inds, env_indices] * (1 - self.timeouts[batch_inds, env_indices])).reshape(-1, 1),
+            self._normalize_reward(self.rewards[batch_inds, env_indices].reshape(-1, 1), env),
+        )
+        return ReplayBufferTransitions(*tuple(data))
+
     def sample(self, batch_size: int, env: Optional[VecNormalize] = None) -> ReplayBufferSamples:
         sampled = []
         while len(sampled) < batch_size:
