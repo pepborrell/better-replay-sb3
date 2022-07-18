@@ -10,6 +10,7 @@ from stable_baselines3.common.type_aliases import ReplayBufferSamples
 from stable_baselines3.common.vec_env import VecNormalize
 
 from buffers.utils import RandomProjectionEncoder
+from buffers.utils.encoder import obs_encoder
 from buffers.utils.sample_reindexer import Reindexer, ReplayBufferTransitions, join_transitions
 
 
@@ -46,8 +47,8 @@ class _RejectUniformStateReplayBuffer(ReplayBuffer):
             0,
         ]  # Count the number of appearences of min count and min_count + 1 in state counter
 
-    def _encode_obs_action(self, obs: np.ndarray, action: Optional[np.ndarray] = None) -> np.ndarray:
-        return self.node_encoder(obs)
+    def _encode_obs_action(self, obs: np.ndarray, action: Optional[np.ndarray] = None) -> tuple:
+        return obs_encoder(self.node_encoder, obs)
 
     def _update_min_deleted(self, observation, action) -> None:
         # Remove the transition from the state counter

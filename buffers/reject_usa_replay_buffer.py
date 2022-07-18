@@ -6,6 +6,7 @@ from gym import spaces
 
 from buffers.reject_us_replay_buffer import _RejectUniformStateReplayBuffer
 from buffers.utils import RandomProjectionEncoder
+from buffers.utils.encoder import obs_action_encoder
 
 
 class _RejectUniformStateActionReplayBuffer(_RejectUniformStateReplayBuffer):
@@ -31,10 +32,8 @@ class _RejectUniformStateActionReplayBuffer(_RejectUniformStateReplayBuffer):
             node_encoder_cls,
         )
 
-    def _encode_obs_action(self, state: np.ndarray, action: np.ndarray):
-        encoded_state = self.node_encoder(state)
-        encoded_state_action = (encoded_state, action)
-        return encoded_state_action
+    def _encode_obs_action(self, obs: np.ndarray, action: np.ndarray) -> tuple:
+        return obs_action_encoder(self.node_encoder, obs, action)
 
 
 class RejectUniformStateActionReplayBuffer(_RejectUniformStateActionReplayBuffer):

@@ -8,4 +8,15 @@ class RandomProjectionEncoder(object):
         self.precision = precision
 
     def __call__(self, x):
-        return tuple(np.around(np.dot(self.proj, x.flatten()), self.precision))
+        return np.around(np.dot(self.proj, x.flatten()), self.precision)
+
+
+def obs_encoder(encoder: RandomProjectionEncoder, obs: np.ndarray) -> tuple:
+    encoded_obs = encoder(obs)
+    return tuple(encoded_obs)
+
+
+def obs_action_encoder(encoder: RandomProjectionEncoder, obs: np.ndarray, action: np.ndarray) -> tuple:
+    encoded_obs = encoder(obs)
+    encoded_obs_action = (*tuple(encoded_obs), *tuple(action))
+    return encoded_obs_action

@@ -11,6 +11,7 @@ from stable_baselines3.common.type_aliases import ReplayBufferSamples
 from stable_baselines3.common.vec_env import VecNormalize
 
 from buffers.utils import RandomProjectionEncoder
+from buffers.utils.encoder import obs_encoder
 
 
 class _UniformStateReplayBuffer(ReplayBuffer):
@@ -90,9 +91,8 @@ class _UniformStateReplayBuffer(ReplayBuffer):
         oldest_trans = self.add_count - self.buffer_size
         return ind >= oldest_trans
 
-    def _encode_obs_action(self, state: np.ndarray, action: Optional[np.ndarray] = None):
-        encoded_state = self.node_encoder(state)
-        return encoded_state
+    def _encode_obs_action(self, obs: np.ndarray, action: Optional[np.ndarray] = None) -> tuple:
+        return obs_encoder(self.node_encoder, obs)
 
 
 class UniformStateReplayBuffer(_UniformStateReplayBuffer):
