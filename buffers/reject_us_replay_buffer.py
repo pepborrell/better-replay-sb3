@@ -11,7 +11,6 @@ from stable_baselines3.common.vec_env import VecNormalize
 
 from buffers.utils import RandomProjectionEncoder
 from buffers.utils.encoder import obs_encoder
-from buffers.utils.sample_reindexer import Reindexer, ReplayBufferTransitions, join_transitions
 
 
 class _RejectUniformStateReplayBuffer(ReplayBuffer):
@@ -107,8 +106,8 @@ class _RejectUniformStateReplayBuffer(ReplayBuffer):
         # Update min count with added transition
         self._update_min_added(enc_state)
 
-    def get_state_count(self, transition: ReplayBufferTransitions) -> int:
-        obs, act = transition.observations, transition.actions
+    def get_state_count(self, trans_ind: int) -> int:
+        obs, act = self.observations[trans_ind], self.actions[trans_ind]
         enc_state = self._encode_obs_action(obs, act)
         return self.state_counter[enc_state]
 
@@ -119,46 +118,15 @@ class _RejectUniformStateReplayBuffer(ReplayBuffer):
     def _update_rejection_coeff(self) -> None:
         pass
 
-    def _get_samples(self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None) -> ReplayBufferTransitions:
-        """Copied from stable_baselines3.common.buffers.ReplayBuffer.get_samples
-        Copied because we want the output to be np arrays, not torch.
-        We convert to torch later.
-        """
-
-        # Sample randomly the env idx
-        env_indices = np.random.randint(0, high=self.n_envs, size=(len(batch_inds),))
-
-        if self.optimize_memory_usage:
-            next_obs = self._normalize_obs(self.observations[(batch_inds + 1) % self.buffer_size, env_indices, :], env)
-        else:
-            next_obs = self._normalize_obs(self.next_observations[batch_inds, env_indices, :], env)
-
-        data = (
-            self._normalize_obs(self.observations[batch_inds, env_indices, :], env),
-            self.actions[batch_inds, env_indices, :],
-            next_obs,
-            # Only use dones that are not due to timeouts
-            # deactivated by default (timeouts is initialized as an array of False)
-            (self.dones[batch_inds, env_indices] * (1 - self.timeouts[batch_inds, env_indices])).reshape(-1, 1),
-            self._normalize_reward(self.rewards[batch_inds, env_indices].reshape(-1, 1), env),
-        )
-        return ReplayBufferTransitions(*tuple(data))
-
     def sample(self, batch_size: int, env: Optional[VecNormalize] = None) -> ReplayBufferSamples:
-        sampled = []
-        while len(sampled) < batch_size:
-            uer_sample = Reindexer(super().sample(batch_size=batch_size, env=env))
-            is_accepted = np.array(
-                list(map(lambda transition: self._accept_transition(self.get_state_count(transition)), uer_sample))
-            )
-            if sampled:
-                sampled = Reindexer(join_transitions((sampled[:], uer_sample[is_accepted])))
-            else:
-                sampled = Reindexer(join_transitions((uer_sample[is_accepted],)))
-
-        self._update_rejection_coeff()
-        data = sampled[:batch_size]
-        return ReplayBufferSamples(*tuple(map(self.to_torch, data)))
+        sampled_inds = []
+        while len(sampled_inds) < batch_size:
+            # Keep trying indices until batch_size samples have been accepted
+            # Random number generation may have issues if optimize memory usage is true (check ReplayBuffer.sample)
+            ind = np.random.randint(0, self.size())
+            if self._accept_transition(self.get_state_count(ind)):
+                sampled_inds.append(ind)
+        return self._get_samples(sampled_inds, env=env)
 
 
 class RejectUniformStateReplayBuffer(_RejectUniformStateReplayBuffer):

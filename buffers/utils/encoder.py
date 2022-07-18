@@ -17,6 +17,8 @@ def obs_encoder(encoder: RandomProjectionEncoder, obs: np.ndarray) -> tuple:
 
 
 def obs_action_encoder(encoder: RandomProjectionEncoder, obs: np.ndarray, action: np.ndarray) -> tuple:
+    # This function only works in environments with scalar actions
+    # To use vector actions, change np.squeeze(action)[()] to *tuple(np.squeeze(action))
     encoded_obs = encoder(np.squeeze(obs))
-    encoded_obs_action = (*tuple(encoded_obs), *tuple(action))
+    encoded_obs_action = (*tuple(encoded_obs), np.squeeze(action)[()])
     return encoded_obs_action
