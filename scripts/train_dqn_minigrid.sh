@@ -11,4 +11,5 @@ python train.py \
     --env $ENV \
     --replay-buffer $REPLAY \
     --track --wandb-project-name better-replay \
+    --gym-packages gym_minigrid
     $ALL_ARGS
