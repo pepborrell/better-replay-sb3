@@ -33,7 +33,7 @@ class _UniformStateActionReplayBuffer(_UniformStateReplayBuffer):
 
     def _encode_obs_action(self, state: np.ndarray, action: np.ndarray):
         encoded_state = self.node_encoder(state)
-        encoded_state_action = (encoded_state, action)
+        encoded_state_action = (encoded_state, *tuple(action))
         return encoded_state_action
 
 
