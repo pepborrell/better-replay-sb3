@@ -12,11 +12,11 @@ sns.set()
 plt.rcParams["font.family"] = "Source Sans Pro"
 
 
-# def count_state_freqs(trajs: list, size: Iterable[int]) -> np.ndarray:
-#     freqs = np.zeros(size)
-#     for state in trajs:
-#         freqs[tuple(state)] += 1
-#     return freqs
+def count_state_freqs(trajs: list, size: Iterable[int]) -> np.ndarray:
+    freqs = np.zeros(size)
+    for state in trajs:
+        freqs[tuple(state)] += 1
+    return freqs
 
 
 def plot_heatmap(hm, ax=None, title=None):

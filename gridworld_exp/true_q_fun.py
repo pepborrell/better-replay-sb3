@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from grid import EnvFromGrid, generate_u_grid
-from plot_grids import plot_heatmap
+from plot_grids import count_state_freqs, plot_heatmap
 
 
 def get_back_graph(env):
@@ -54,8 +54,6 @@ def get_q(env, gamma=0.9):
                 # Update Q: Q(s, a) = r + gamma * max(Q(s', a))
                 assert np.any(dones[next0, next1, :])
                 Q[pos[0], pos[1], act] = f_rews[pos[0], pos[1], act] + gamma * np.nanmax(Q[next0, next1, :])
-                if pos[0] == 0:
-                    print(Q[pos[0], pos[1], act])
                 for aid in range(len(env.action_space)):
                     to_expand.append((pos[0], pos[1], aid))
             dones[pos[0], pos[1], act] = True
@@ -63,13 +61,61 @@ def get_q(env, gamma=0.9):
     return Q
 
 
+def get_optimal_policy(env, gamma=0.9):
+    Q = get_q(env, gamma)
+    policy = lambda s: np.nanargmax(Q[s[0], s[1], :])
+    return policy
+
+
+def generate_trajectories(env, n_steps, gamma=0.9):
+    policy = get_optimal_policy(env, gamma)
+    pos = env.reset()
+    states = np.empty((n_steps, 2), dtype=int)
+    actions = np.empty((n_steps,), dtype=int)
+    rewards = np.empty((n_steps,), dtype=float)
+    for i in range(n_steps):
+        states[i, :] = pos
+        act_id = policy(pos)
+        act = env.action_space[act_id]
+        actions[i] = act_id
+        pos, r, done = env.step(act)
+        if done:
+            pos = env.reset()
+        rewards[i] = r
+    return states, actions, rewards
+
+
+def get_optimal_state_dist(env, n_steps=1000, gamma=0.9):
+    states, actions, rewards = generate_trajectories(env, n_steps, gamma)
+    size = env.grid.shape
+    state_freqs = count_state_freqs(states, size)
+    # Normalize
+    state_freqs /= np.sum(state_freqs)
+    return state_freqs
+
+
+def get_optimal_state_action_dist(env, n_steps=1000, gamma=0.9):
+    states, actions, rewards = generate_trajectories(env, n_steps, gamma)
+    state_acts = np.concatenate((states, actions[:, np.newaxis]), axis=1)
+    assert state_acts.shape == (n_steps, 3)
+    size = env.grid.shape + (len(env.action_space),)
+    state_act_freqs = count_state_freqs(state_acts, size)
+    # Normalize
+    state_act_freqs /= np.sum(state_act_freqs)
+    return state_act_freqs
+
+
 def main():
     n = 15
     grid = generate_u_grid(n, n)
     env = EnvFromGrid(grid, goal=np.array([n // 2, n // 2]))
+    # Testing everything here
     q = get_q(env)
-    print(np.nanmax(q, axis=-1))
-    plot_heatmap(np.nanmax(q, axis=-1))
+    fig, ax = plt.subplots()
+    plot_heatmap(np.nanmax(q, axis=-1), ax=ax)
+    fig, ax = plt.subplots()
+    plot_heatmap(get_optimal_state_dist(env, n_steps=10000), ax=ax)
+    state_act_dist = get_optimal_state_action_dist(env, n_steps=10000)
     plt.show()
 
 
