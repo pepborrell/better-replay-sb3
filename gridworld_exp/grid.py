@@ -98,8 +98,8 @@ class EnvFromGrid:
         pos = self.pos.copy()
         reward = 10.0 if np.all(pos == self.goal) else -1.0
         if reward > 0:
-            # self.pos = None
-            return pos, reward, True
+            self.pos = None
+            return None, reward, True
         pos += action
         assert self._is_position_legal(pos), "Illegal action"
         self.pos = pos

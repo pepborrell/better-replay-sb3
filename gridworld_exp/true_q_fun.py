@@ -22,7 +22,7 @@ def get_back_graph(env):
                     if env._is_action_legal(pos, action):
                         env.assign_position(pos)
                         next_s, r, _ = env.step(action)
-                        if not ((pos[0] == next_s[0]) and (pos[1] == next_s[1])):
+                        if next_s is not None:
                             back_graph[next_s[0], next_s[1], aid] = pos
                         forw_rewards[pos[0], pos[1], aid] = r
 
