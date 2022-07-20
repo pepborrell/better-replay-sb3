@@ -110,7 +110,7 @@ def main():
     grid = generate_u_grid(n, n)
     env = EnvFromGrid(grid, goal=np.array([n // 2, n // 2]))
     # Testing everything here
-    q = get_q(env)
+    q = get_q(env, gamma=1)
     fig, ax = plt.subplots()
     plot_heatmap(np.nanmax(q, axis=-1), ax=ax)
     fig, ax = plt.subplots()
