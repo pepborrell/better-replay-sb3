@@ -100,7 +100,7 @@ class EnvFromGrid:
         if reward > 0:
             self.pos = None
             return None, reward, True
-        pos += action
+        pos = self._move(pos, action)
         assert self._is_position_legal(pos), "Illegal action"
         self.pos = pos
         return pos, reward, False
