@@ -23,6 +23,7 @@ class _RejectUniformStateReplayBuffer(ReplayBuffer):
         optimize_memory_usage: bool = False,
         handle_timeout_termination: bool = True,
         node_encoder_cls=RandomProjectionEncoder,
+        rejection_coeff_change: float = 1e-5,
     ):
         super().__init__(
             buffer_size,
@@ -36,6 +37,8 @@ class _RejectUniformStateReplayBuffer(ReplayBuffer):
 
         self.node_encoder = node_encoder_cls(self.observation_space.shape)
         self.state_counter = defaultdict(int)  # Counts how many transitions contain a given state
+        self.rejection_exp = 1.0
+        self.rejection_coeff_change = rejection_coeff_change
 
         # To maintain a record of what's min_s n(s),
         # where n(s) is the number of transitions that have state s
@@ -112,13 +115,14 @@ class _RejectUniformStateReplayBuffer(ReplayBuffer):
 
     def _accept_transition(self, n_s: int) -> bool:
         u: float = np.random.uniform()
-        return u < (self.min_count / n_s)
+        return u < (self.min_count / n_s) ** self.rejection_exp
 
     def _update_rejection_coeff(self) -> None:
-        pass
+        self.rejection_exp = np.min(0, self.rejection_exp - self.rejection_coeff_change)
 
     def sample(self, batch_size: int, env: Optional[VecNormalize] = None) -> ReplayBufferSamples:
         sampled_inds = []
+        self._update_rejection_coeff()
         while len(sampled_inds) < batch_size:
             # Keep trying indices until batch_size samples have been accepted
             # Random number generation may have issues if optimize memory usage is true (check ReplayBuffer.sample)
@@ -139,6 +143,7 @@ class RejectUniformStateReplayBuffer(_RejectUniformStateReplayBuffer):
         optimize_memory_usage: bool = False,
         handle_timeout_termination: bool = True,
         node_encoder_cls=RandomProjectionEncoder,
+        rejection_coeff_change: float = 1e-5,
     ):
         super().__init__(
             buffer_size,
@@ -149,4 +154,5 @@ class RejectUniformStateReplayBuffer(_RejectUniformStateReplayBuffer):
             optimize_memory_usage,
             handle_timeout_termination,
             node_encoder_cls,
+            rejection_coeff_change,
         )

@@ -20,6 +20,7 @@ class _RejectUniformStateActionReplayBuffer(_RejectUniformStateReplayBuffer):
         optimize_memory_usage: bool = False,
         handle_timeout_termination: bool = True,
         node_encoder_cls=RandomProjectionEncoder,
+        rejection_coeff_change: float = 1e-5,
     ):
         super().__init__(
             buffer_size,
@@ -30,6 +31,7 @@ class _RejectUniformStateActionReplayBuffer(_RejectUniformStateReplayBuffer):
             optimize_memory_usage,
             handle_timeout_termination,
             node_encoder_cls,
+            rejection_coeff_change,
         )
 
     def _encode_obs_action(self, obs: np.ndarray, action: np.ndarray) -> tuple:
@@ -47,6 +49,7 @@ class RejectUniformStateActionReplayBuffer(_RejectUniformStateActionReplayBuffer
         optimize_memory_usage: bool = False,
         handle_timeout_termination: bool = True,
         node_encoder_cls=RandomProjectionEncoder,
+        rejection_coeff_change: float = 1e-5,
     ):
         super().__init__(
             buffer_size,
@@ -57,4 +60,5 @@ class RejectUniformStateActionReplayBuffer(_RejectUniformStateActionReplayBuffer
             optimize_memory_usage,
             handle_timeout_termination,
             node_encoder_cls,
+            rejection_coeff_change,
         )
