@@ -23,7 +23,7 @@ class _RejectUniformStateReplayBuffer(ReplayBuffer):
         optimize_memory_usage: bool = False,
         handle_timeout_termination: bool = True,
         node_encoder_cls=RandomProjectionEncoder,
-        rejection_coeff_change: float = 1e-5,
+        rejection_coeff_change: float = 1e-6,
     ):
         super().__init__(
             buffer_size,
@@ -143,7 +143,7 @@ class RejectUniformStateReplayBuffer(_RejectUniformStateReplayBuffer):
         optimize_memory_usage: bool = False,
         handle_timeout_termination: bool = True,
         node_encoder_cls=RandomProjectionEncoder,
-        rejection_coeff_change: float = 1e-5,
+        rejection_coeff_change: float = 1e-6,
     ):
         super().__init__(
             buffer_size,
