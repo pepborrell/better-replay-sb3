@@ -39,6 +39,22 @@ class _RejectUniformStateActionReplayBuffer(_RejectUniformStateReplayBuffer):
 
 
 class RejectUniformStateActionReplayBuffer(_RejectUniformStateActionReplayBuffer):
+    """Uniform State Action Replay.
+
+    This buffer implementation is based on USR with rejection sampling.
+    The only relevant change is in the way the state is encoded, because now the actions are taken into account, to make sampling more granular.
+
+    Args:
+        buffer_size: int, maximum size of the buffer
+        observation_space: gym.Space, observation space of the environment
+        action_space: gym.Space, action space of the environment
+        device: torch.device, device on which the buffer will be stored
+        n_envs: int, number of environments to sample from
+        optimize_memory_usage: bool, whether to use an array less to store the next observations
+        handle_timeout_termination: bool, whether to handle timeout termination or not
+        rejection_coeff_change: float, change in rejection coefficient exponent. Updates are done e = e - rejection_coeff_change, it happens every time a batch is sampled.
+    """
+
     def __init__(
         self,
         buffer_size: int,

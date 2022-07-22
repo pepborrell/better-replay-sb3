@@ -133,6 +133,22 @@ class _RejectUniformStateReplayBuffer(ReplayBuffer):
 
 
 class RejectUniformStateReplayBuffer(_RejectUniformStateReplayBuffer):
+    """Uniform State Replay.
+    This replay buffer performs uniform state replay on discrete state spaces.
+    The implementation is done using rejection sampling, so that the buffer can be generalized to
+    continuous state spaces, and the sampling coefficient can be shifted to obtain uniform sampling.
+
+    Args:
+        buffer_size: int, maximum size of the buffer
+        observation_space: gym.Space, observation space of the environment
+        action_space: gym.Space, action space of the environment
+        device: torch.device, device on which the buffer will be stored
+        n_envs: int, number of environments to sample from
+        optimize_memory_usage: bool, whether to use an array less to store the next observations
+        handle_timeout_termination: bool, whether to handle timeout termination or not
+        rejection_coeff_change: float, change in rejection coefficient exponent. Updates are done e = e - rejection_coeff_change, it happens every time a batch is sampled.
+    """
+
     def __init__(
         self,
         buffer_size: int,
