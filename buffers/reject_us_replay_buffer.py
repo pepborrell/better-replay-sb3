@@ -52,6 +52,18 @@ class _RejectUniformStateReplayBuffer(ReplayBuffer):
         return obs_encoder(self.node_encoder, obs)
 
     def _update_min_deleted(self, observation, action) -> None:
+        """What happens when a transition is deleted from the buffer?
+        We need to update the min_count and count_min_count variables, that offer a way to
+        keep track of min_s n(s), where n(s) is the number of transitions that have state s,
+        without the need to scan the entire n(s) vector.
+
+        Two cases:
+        1. The transition that was deleted has n(s) == min_count
+            We need to decrement count_min_count[0] and shift the counters, because min_count is now min_count - 1
+            If min_count was 1, the whole state was deleted and we don't need to do anything
+        2. The transition that was deleted has n(s) == min_count + 1
+            We need to decrement count_min_count[1] and increment count_min_count[0]
+        """
         # Remove the transition from the state counter
         enc_rem_t = self._encode_obs_action(observation, action)
         self.state_counter[enc_rem_t] -= 1
@@ -72,6 +84,16 @@ class _RejectUniformStateReplayBuffer(ReplayBuffer):
             self.count_min_count[1] -= 1
 
     def _update_min_added(self, encoded_state):
+        """Similar to what has been described above, but for the case of adding a transition
+        that has n(s) == min_count or min_count + 1.
+
+        Two cases:
+        1. The transition that was added has n(s) == min_count
+            We need to decrement count_min_count[0] and increment count_min_count[1], because the transition added one to the state counter
+            If count_min_count[0] is now 0, there's no states with min_count, so we shift count_min_count and scan the entire state counter to find count_min_count[1]
+        2. The transition that was added has n(s) == min_count + 1
+            We need to decrement count_min_count[1]
+        """
         # Adding a new transition to one of the states that has exactly min_count transitions
         if self.state_counter[encoded_state] == self.min_count:
             self.count_min_count[0] -= 1
@@ -114,6 +136,11 @@ class _RejectUniformStateReplayBuffer(ReplayBuffer):
         return self.state_counter[enc_state]
 
     def _accept_transition(self, n_s: int) -> bool:
+        """This function returns a boolean saying if the transition should be accepted or not.
+        The decision is done using rejection sampling.
+        In the USR case, the rejection ratio is inversely proportional to the state frequency of the transition in the buffer.
+        The min count constant is added to increase sampling efficiency, and the exponent enables to shift USR to UER.
+        """
         u: float = np.random.uniform()
         return u < (self.min_count / n_s) ** self.rejection_exp
 
